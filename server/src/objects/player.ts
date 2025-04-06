@@ -238,7 +238,8 @@ export class Player extends BaseGameObject.derive(ObjectCategory.Player) {
         right: false,
         // mobile
         moving: false,
-        angle: 0
+        angle: 0,
+        magnitude: 255,
     };
 
     isMobile!: boolean;
@@ -907,8 +908,10 @@ export class Player extends BaseGameObject.derive(ObjectCategory.Player) {
         let movement: Vector;
 
         const playerMovement = this.movement;
+
         if (this.isMobile && playerMovement.moving) {
-            movement = Vec.fromPolar(playerMovement.angle);
+            console.log(playerMovement.magnitude);
+            movement = Vec.fromPolar(playerMovement.angle, playerMovement.magnitude/255);
         } else {
             let x = +playerMovement.right - +playerMovement.left;
             let y = +playerMovement.down - +playerMovement.up;
@@ -2495,7 +2498,7 @@ export class Player extends BaseGameObject.derive(ObjectCategory.Player) {
     processInputs(packet: InputData): void {
         this.movement = {
             ...packet.movement,
-            ...(packet.isMobile ? packet.mobile : { moving: false, angle: 0 })
+            ...(packet.isMobile ? packet.mobile : { moving: false, angle: 0, magnitude: 255 })
         };
 
         this._pingSeq = packet.pingSeq;

@@ -61,6 +61,7 @@ type MobileMixin = {
     readonly mobile: {
         readonly moving: boolean
         readonly angle: number
+        readonly magnitude: number
     }
 };
 
@@ -114,6 +115,7 @@ export const InputPacket = new Packet<InputData>(PacketType.Input, {
 
         if (isMobile) {
             stream.writeRotation2(data.mobile.angle);
+            stream.writeUint8(data.mobile.magnitude);
         }
 
         if (turning) {
@@ -183,7 +185,8 @@ export const InputPacket = new Packet<InputData>(PacketType.Input, {
         if (isMobile) {
             data.mobile = {
                 moving,
-                angle: stream.readRotation2()
+                angle: stream.readRotation2(),
+                magnitude: stream.readUint8(),
             };
         }
 
