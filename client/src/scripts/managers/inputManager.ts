@@ -548,7 +548,6 @@ export const InputManager = new (class InputManager {
                         const angle = Math.atan2(gp.axes[1], gp.axes[0]);
                         this.movementAngle = angle;
                         const d = Math.max(Math.abs(gp.axes[1]), Math.abs(gp.axes[0]));
-                        // console.log(gp.axes[1], gp.axes[0], d);
                         this.movement.magnitude = d * 255;
                     }
                 }
@@ -558,11 +557,6 @@ export const InputManager = new (class InputManager {
         });
 
         window.addEventListener("gamepaddisconnected", (e) => {
-            console.log(
-              "Gamepad disconnected from index %d: %s",
-              e.gamepad.index,
-              e.gamepad.id
-            );
             if(! navigator.getGamepads().length){
                 ticker.stop();
                 this.controllerConnected = false;
