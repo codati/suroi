@@ -8,7 +8,7 @@ import { ItemType, type ItemDefinition } from "@common/utils/objectDefinitions";
 import { Vec } from "@common/utils/vector";
 import $ from "jquery";
 import nipplejs, { type JoystickOutputData } from "nipplejs";
-import { isMobile } from "pixi.js";
+import { isMobile, Ticker} from "pixi.js";
 import { getTranslatedString } from "../utils/translations/translations";
 import { type TranslationKeys } from "../utils/translations/typings";
 import { Game } from "../game";
@@ -191,7 +191,8 @@ export const InputManager = new (class InputManager {
         left: false,
         down: false,
         right: false,
-        moving: false
+        moving: false,
+        magnitude: 255,
     };
 
     // had to put it here because it's not a boolean
@@ -201,6 +202,7 @@ export const InputManager = new (class InputManager {
     mouseX = 0;
     mouseY = 0;
 
+    controllerConnected = false;
     emoteWheelActive = false;
     emoteWheelPosition = Vec.create(0, 0);
     pingWheelActive = false;
@@ -291,13 +293,14 @@ export const InputManager = new (class InputManager {
                     }
                     : {}
             ),
-            isMobile: this.isMobile,
+            isMobile: this.isMobile || this.controllerConnected,
             ...(
-                this.isMobile
+                this.isMobile || this.controllerConnected
                     ? {
                         mobile: {
                             angle: this.movementAngle,
-                            moving: this.movement.moving
+                            moving: this.movement.moving,
+                            magnitude: this.movement.magnitude,
                         }
                     }
                     : {}
@@ -524,6 +527,47 @@ export const InputManager = new (class InputManager {
                 shootOnRelease = false;
             });
         }
+        // Game Pad
+        const ticker = new Ticker();
+        window.addEventListener("gamepadconnected", (e) => {
+            this.controllerConnected = true;
+            ticker.add(() => {
+                const gp = navigator.getGamepads()[0];
+                if (gp) {
+                    this.attacking = gp.buttons[5].pressed;
+                    this.turning = gp.axes[3] !== 0 && gp.axes[2] !== 0;
+                    if (this.turning) {
+                        this.rotation = Math.atan2(gp.axes[3], gp.axes[2]);
+                    }
+                    const activePlayer = Game.activePlayer;
+                    if (!Game.gameOver && activePlayer) {
+                        activePlayer.container.rotation = this.rotation;
+                    }
+                    this.movement.moving = gp.axes[1] !== 0 || gp.axes[0] !== 0;
+                    if (this.movement.moving) {
+                        const angle = Math.atan2(gp.axes[1], gp.axes[0]);
+                        this.movementAngle = angle;
+                        const d = Math.max(Math.abs(gp.axes[1]), Math.abs(gp.axes[0]));
+                        // console.log(gp.axes[1], gp.axes[0], d);
+                        this.movement.magnitude = d * 255;
+                    }
+                }
+            });
+            ticker.start();
+
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            console.log(
+              "Gamepad disconnected from index %d: %s",
+              e.gamepad.index,
+              e.gamepad.id
+            );
+            if(! navigator.getGamepads().length){
+                ticker.stop();
+                this.controllerConnected = false;
+            }
+          });
 
         // Gyro stuff
         const gyroAngle = GameConsole.getBuiltInCVar("mb_gyro_angle");
