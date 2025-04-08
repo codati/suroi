@@ -4,7 +4,7 @@ import { type Game } from "./game";
 import { type GamePlugin } from "./pluginManager";
 
 export const Config = {
-    host: "127.0.0.1",
+    host: "0.0.0.0",
     port: 8000,
 
     map: "normal",

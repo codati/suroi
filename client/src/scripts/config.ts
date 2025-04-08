@@ -8,7 +8,7 @@ export const Config = {
             mainAddress: "http://127.0.0.1:8000",
             gameAddress: "ws://127.0.0.1:<gameID>",
             offset: 8001
-        }/* ,
+        },
         na: {
             name: "North America",
             mainAddress: "https://na.suroi.io",
@@ -38,9 +38,9 @@ export const Config = {
             mainAddress: "https://oc.suroi.io",
             gameAddress: "wss://oc.suroi.io/game/<gameID>",
             offset: 1
-        } */
+        }
     },
-    defaultRegion: "dev"
+    defaultRegion: "na"
 } satisfies ConfigType as ConfigType;
 
 export interface ConfigType {

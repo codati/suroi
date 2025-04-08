@@ -8,7 +8,7 @@ import { ItemType, type ItemDefinition } from "@common/utils/objectDefinitions";
 import { Vec } from "@common/utils/vector";
 import $ from "jquery";
 import nipplejs, { type JoystickOutputData } from "nipplejs";
-import { isMobile, Ticker} from "pixi.js";
+import { isMobile, Ticker } from "pixi.js";
 import { getTranslatedString } from "../utils/translations/translations";
 import { type TranslationKeys } from "../utils/translations/typings";
 import { Game } from "../game";
@@ -192,7 +192,7 @@ export const InputManager = new (class InputManager {
         down: false,
         right: false,
         moving: false,
-        magnitude: 255,
+        magnitude: 255
     };
 
     // had to put it here because it's not a boolean
@@ -293,14 +293,14 @@ export const InputManager = new (class InputManager {
                     }
                     : {}
             ),
-            isMobile: this.isMobile || this.controllerConnected,
+            isJoystick: this.isMobile || this.controllerConnected,
             ...(
                 this.isMobile || this.controllerConnected
                     ? {
-                        mobile: {
+                        joystick: {
                             angle: this.movementAngle,
                             moving: this.movement.moving,
-                            magnitude: this.movement.magnitude,
+                            magnitude: this.movement.magnitude
                         }
                     }
                     : {}
@@ -476,7 +476,8 @@ export const InputManager = new (class InputManager {
                 const angle = -data.angle.radian;
                 this.movementAngle = angle;
                 this.movement.moving = true;
-
+                console.log(data)
+                this.movement.magnitude = data.force > 1 ? 255 : data.force * 255;
                 if (!aimJoystickUsed && !shootOnRelease) {
                     this.rotation = angle;
                     this.turning = true;
@@ -507,7 +508,7 @@ export const InputManager = new (class InputManager {
                     activePlayer.images.aimTrail.alpha = 1;
                 }
 
-                const attacking = data.distance > GameConsole.getBuiltInCVar("mb_joystick_size") / 3;
+                const attacking = data.force > 0.75;
                 if (
                     (def.itemType === ItemType.Throwable && this.attacking)
                     || (def.itemType === ItemType.Gun && def.shootOnRelease)
@@ -529,7 +530,7 @@ export const InputManager = new (class InputManager {
         }
         // Game Pad
         const ticker = new Ticker();
-        window.addEventListener("gamepadconnected", (e) => {
+        window.addEventListener("gamepadconnected", () => {
             this.controllerConnected = true;
             ticker.add(() => {
                 const gp = navigator.getGamepads()[0];
@@ -553,15 +554,14 @@ export const InputManager = new (class InputManager {
                 }
             });
             ticker.start();
-
         });
 
-        window.addEventListener("gamepaddisconnected", (e) => {
-            if(! navigator.getGamepads().length){
+        window.addEventListener("gamepaddisconnected", () => {
+            if (!navigator.getGamepads().length) {
                 ticker.stop();
                 this.controllerConnected = false;
             }
-          });
+        });
 
         // Gyro stuff
         const gyroAngle = GameConsole.getBuiltInCVar("mb_gyro_angle");

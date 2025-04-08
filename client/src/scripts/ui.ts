@@ -577,7 +577,7 @@ export async function setUpUI(): Promise<void> {
                     globalReady = false;
                     window.location.hash = `#${teamID}`;
 
-                    ui.createTeamUrl.val(`${window.location.origin}/?region=${GameConsole.getBuiltInCVar("cv_region")}#${teamID}`);
+                    ui.createTeamUrl.val(`https://suroi.io/?region=${GameConsole.getBuiltInCVar("cv_region")}#${teamID}`);
 
                     ui.createTeamAutoFill.prop("checked", data.autoFill);
                     ui.createTeamLock.prop("checked", data.locked);

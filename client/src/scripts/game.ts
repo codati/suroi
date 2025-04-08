@@ -350,7 +350,7 @@ export const Game = new (class Game {
 
             let skin: typeof defaultClientCVars["cv_loadout_skin"];
             this.sendPacket(JoinPacket.create({
-                isMobile: InputManager.isMobile || InputManager.controllerConnected,
+                isMobile: InputManager.isMobile,
                 name: GameConsole.getBuiltInCVar("cv_player_name"),
                 skin: Skins.fromStringSafe(
                     GameConsole.getBuiltInCVar("cv_loadout_skin")
