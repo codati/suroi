@@ -201,8 +201,10 @@ class InputManagerClass {
 
     mouseX = 0;
     mouseY = 0;
+    activeButton: HTMLButtonElement | undefined;
 
     controllerConnected = false;
+    lastButtonStat: GamepadButton[] = [];
     emoteWheelActive = false;
     emoteWheelPosition = Vec.create(0, 0);
     pingWheelActive = false;
@@ -530,12 +532,12 @@ class InputManagerClass {
         }
         // Game Pad
         const ticker = new Ticker();
-        window.addEventListener("gamepadconnected", () => {
+        window.addEventListener("gamepadconnected", (event) => {
+            this.lastButtonStat = event.gamepad.buttons.map(button => button);
             this.controllerConnected = true;
             ticker.add(() => {
                 const gp = navigator.getGamepads()[0];
                 if (gp) {
-                    this.attacking = gp.buttons[5].pressed;
                     this.turning = gp.axes[3] !== 0 && gp.axes[2] !== 0;
                     if (this.turning) {
                         this.rotation = Math.atan2(gp.axes[3], gp.axes[2]);
@@ -551,6 +553,21 @@ class InputManagerClass {
                         const d = Math.max(Math.abs(gp.axes[1]), Math.abs(gp.axes[0]));
                         this.movement.magnitude = d * 255;
                     }
+
+                    gp.buttons.forEach((button,index)=>{
+                        if(button.pressed !== this.lastButtonStat[index].pressed){
+                            if(this.activeButton){
+                                if(button.pressed){
+                                    this.activeButton.dispatchEvent(new CustomEvent("gamePad",{detail:`Button${index}`}));
+                                }
+                            } else {
+                                this.fireAllEventsAtKey(`Button${index}`, button.pressed);
+                            }
+                        }
+                        this.lastButtonStat[index]= button;
+                    });
+                    
+
                 }
             });
             ticker.start();
@@ -718,11 +735,15 @@ class InputManagerClass {
     }
 
     private getKeyFromInputEvent<
-        const Ev extends KeyboardEvent | MouseEvent | WheelEvent
+        const Ev extends KeyboardEvent | MouseEvent | WheelEvent | Event
     >(event: Ev): Ev extends KeyboardEvent ? string | string[] : string {
+
         type Ret = typeof event extends KeyboardEvent ? string[] : string;
 
         let input = "";
+        if (event instanceof CustomEvent) {
+            input = event.detail;
+        }
         if (event instanceof KeyboardEvent) {
             const { key, code, location } = event;
 
@@ -836,7 +857,6 @@ class InputManagerClass {
             </div>
         `);
 
-        let activeButton: HTMLButtonElement | undefined;
         for (const action in defaultBinds) {
             const bindContainer = $("<div/>", { class: "modal-item" }).appendTo(this._keybindsContainer);
 
@@ -861,7 +881,7 @@ class InputManagerClass {
             actions.forEach((bind, i) => {
                 const bindButton = buttons[i];
 
-                const setKeyBind = (event: KeyboardEvent | MouseEvent | WheelEvent): void => {
+                const setKeyBind = (event: KeyboardEvent | MouseEvent | WheelEvent | Event): void => {
                     event.stopImmediatePropagation();
 
                     if (
@@ -869,13 +889,17 @@ class InputManagerClass {
                         && event.type === "mousedown"
                         && !bindButton.classList.contains("active")
                     ) {
-                        activeButton?.classList.remove("active");
+                        this.activeButton?.classList.remove("active");
                         bindButton.classList.add("active");
-                        activeButton = bindButton;
+                        this.activeButton = bindButton;
+                        
                         return;
                     }
 
                     if (bindButton.classList.contains("active")) {
+                        this.activeButton?.classList.remove("active");
+
+                        this.activeButton = undefined;
                         event.preventDefault();
                         const keyRaw = this.getKeyFromInputEvent(event);
                         // use console if you want to bind specifically to a left/right variant
@@ -896,6 +920,7 @@ class InputManagerClass {
                 };
 
                 bindButton.addEventListener("keydown", setKeyBind);
+                bindButton.addEventListener("gamePad", setKeyBind);
                 bindButton.addEventListener("mousedown", setKeyBind);
                 bindButton.addEventListener("wheel", setKeyBind, { passive: true });
                 bindButton.addEventListener("contextmenu", e => { e.preventDefault(); });
